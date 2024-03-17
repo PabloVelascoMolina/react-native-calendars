@@ -22,7 +22,7 @@ const AgendaItem = (props: ItemProps) => {
   if (isEmpty(item)) {
     return (
       <View style={styles.emptyItem}>
-        <Text style={styles.emptyItemText}>No Events Planned Today</Text>
+        <Text style={styles.emptyItemText}>No hay eventos hoy</Text>
       </View>
     );
   }

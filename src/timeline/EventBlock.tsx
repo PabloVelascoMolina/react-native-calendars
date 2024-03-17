@@ -1,6 +1,6 @@
 import XDate from 'xdate';
-import React, {useCallback, useMemo} from 'react';
-import {View, Text, TextStyle, TouchableOpacity, ViewStyle} from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View, Text, TextStyle, TouchableOpacity, ViewStyle, StyleSheet } from 'react-native';
 
 export interface Event {
   id?: string;
@@ -32,42 +32,71 @@ const TEXT_LINE_HEIGHT = 17;
 const EVENT_DEFAULT_COLOR = '#add8e6';
 
 const EventBlock = (props: EventBlockProps) => {
-  const {index, event, renderEvent, onPress, format24h, styles} = props;
+  const { index, event, renderEvent, onPress, format24h } = props;
 
-  // Fixing the number of lines for the event title makes this calculation easier.
-  // However it would make sense to overflow the title to a new line if needed
+  // Asumiendo que tienes estilos adicionales pasados mediante props, como "styles.event"
+  const customStyles = StyleSheet.create({
+    eventContainer: {
+      borderRadius: 5,
+      borderLeftWidth: 5,
+      borderLeftColor: '#3173d3', // Color del borde izquierdo
+      padding: 8,
+      paddingLeft: 10,
+      backgroundColor: event.color ? event.color : EVENT_DEFAULT_COLOR,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    eventTitle: {
+      fontWeight: 'bold',
+      fontSize: 14,
+      marginBottom: 2,
+    },
+    eventSummary: {
+      fontSize: 12,
+    },
+    eventTimes: {
+      fontSize: 12,
+      marginTop: 4,
+      color: '#555',
+    }
+  });
+
   const numberOfLines = Math.floor(event.height / TEXT_LINE_HEIGHT);
   const formatTime = format24h ? 'HH:mm' : 'hh:mm A';
-  const eventStyle = useMemo(() => {
-    return {
-      left: event.left,
-      height: event.height,
-      width: event.width,
-      top: event.top,
-      backgroundColor: event.color ? event.color : EVENT_DEFAULT_COLOR
-    };
-  }, [event]);
+
+  const eventStyle = useMemo(() => ({
+    left: event.left,
+    height: event.height,
+    width: event.width,
+    top: event.top,
+  }), [event]);
 
   const _onPress = useCallback(() => {
     onPress(index);
   }, [index, onPress]);
 
   return (
-    <TouchableOpacity activeOpacity={0.9} onPress={_onPress} style={[styles.event, eventStyle]}>
+    <TouchableOpacity activeOpacity={0.9} onPress={_onPress} style={[customStyles.eventContainer, eventStyle]}>
       {renderEvent ? (
         renderEvent(event)
       ) : (
         <View>
-          <Text numberOfLines={1} style={styles.eventTitle}>
+          <Text numberOfLines={1} style={customStyles.eventTitle}>
             {event.title || 'Event'}
           </Text>
           {numberOfLines > 1 ? (
-            <Text numberOfLines={numberOfLines - 1} style={[styles.eventSummary]}>
+            <Text numberOfLines={numberOfLines - 1} style={customStyles.eventSummary}>
               {event.summary || ' '}
             </Text>
           ) : null}
           {numberOfLines > 2 ? (
-            <Text style={styles.eventTimes} numberOfLines={1}>
+            <Text style={customStyles.eventTimes} numberOfLines={1}>
               {new XDate(event.start).toString(formatTime)} - {new XDate(event.end).toString(formatTime)}
             </Text>
           ) : null}
