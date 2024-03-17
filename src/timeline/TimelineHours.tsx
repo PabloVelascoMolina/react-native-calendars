@@ -99,36 +99,28 @@ const TimelineHours = (props: TimelineHoursProps) => {
   }, [onBackgroundLongPressOut, date]);
 
   const renderHourLinesAndSlots = useMemo(() => {
-    return range(start, end).map(hour => {
-      return (
-        <React.Fragment key={`hour-${hour}`}>
-          <Text style={[styles.timeLabel, { top: HOUR_BLOCK_HEIGHT * hour }]}>
-            {format24h ? `${hour}:00` : `${hour % 12 || 12} ${hour < 12 ? 'AM' : 'PM'}`}
-          </Text>
-          <View style={[styles.fullHourLine, { top: HOUR_BLOCK_HEIGHT * hour }]} />
-          {hour !== end - 1 && range(1, 4).map(minuteDivision => {
-            return (
-              <View
-                key={`slot-${hour}-${minuteDivision}`}
-                style={[
-                  styles.miniSlot,
-                  { top: HOUR_BLOCK_HEIGHT * hour + (HOUR_BLOCK_HEIGHT / 4) * minuteDivision }
-                ]}
-              />
-            );
-          })}
-        </React.Fragment>
-      );
-    });
+    return range(start, end).map(hour => (
+      <React.Fragment key={`hour-${hour}`}>
+        <Text style={[styles.timeLabel, { top: HOUR_BLOCK_HEIGHT * hour }]}>
+          {format24h ? `${hour}:00` : `${hour % 12 || 12} ${hour < 12 ? 'AM' : 'PM'}`}
+        </Text>
+        <View style={[styles.fullHourLine, { top: HOUR_BLOCK_HEIGHT * hour }]} />
+        {hour !== end && range(1, 4).map(minuteDivision => (
+          <View
+            key={`slot-${hour}-${minuteDivision}`}
+            style={[
+              styles.miniSlot,
+              { top: HOUR_BLOCK_HEIGHT * hour + (HOUR_BLOCK_HEIGHT / 4) * minuteDivision }
+            ]}
+          />
+        ))}
+      </React.Fragment>
+    ));
   }, [start, end, format24h]);
 
   return (
-    <View>
-      <TouchableWithoutFeedback>
-        <View style={StyleSheet.absoluteFillObject}>
-        {renderHourLinesAndSlots}
-        </View>
-      </TouchableWithoutFeedback>
+    <View style={{ paddingTop: 20 }}> {/* Ajuste para comenzar desde un poco más abajo */}
+      {renderHourLinesAndSlots}
     </View>
   );
 };
@@ -138,7 +130,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     color: '#333',
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: 'bold',
     paddingLeft: 5,
   },
@@ -146,14 +138,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     width: '100%',
-    height: 1,
+    height: 2,
     backgroundColor: '#e1e1e1',
   },
   miniSlot: {
     position: 'absolute',
-    left: 50, // Ajustar según el diseño de tu aplicación
-    width: '75%', // Esto hace que el mini slot no se extienda completamente
-    height: 1,
+    left: 50, // Ajuste según tu diseño
+    width: '75%', // Hace que los slots no se extiendan completamente
+    height: 2, // Aumenta la altura para hacerlos más visibles
     backgroundColor: '#cccccc',
   },
 });
