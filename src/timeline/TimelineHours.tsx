@@ -1,68 +1,51 @@
 import range from 'lodash/range';
-
 import React, { useMemo } from 'react';
-import {View, Text, StyleSheet} from 'react-native';
-import { UnavailableHours } from './Packer';
+import { View, Text, StyleSheet } from 'react-native';
 
-interface NewEventTime {
-    hour: number;
-    minutes: number;
-    date?: string;
-}
+const TimelineHours = ({ start = 0, end = 24, format24h = true }) => {
+  const HOUR_BLOCK_HEIGHT = 60; // Altura de cada bloque de hora
+  
+  const renderHoursAndMiniSlots = useMemo(() => {
+    return range(start, end).map(hour => {
+      // Convertir la hora a formato 12h si format24h es falso
+      const hourLabel = format24h ? `${hour}:00` : `${hour % 12 || 12} ${hour < 12 || hour === 24 ? 'AM' : 'PM'}`;
+      
+      // Los mini slots representan 15, 30, y 45 minutos
+      const miniSlots = range(1, 4).map(minuteDivision => {
+        const topPosition = HOUR_BLOCK_HEIGHT * hour + (HOUR_BLOCK_HEIGHT / 4) * minuteDivision;
+        
+        return (
+          <View
+            key={`mini-slot-${hour}-${minuteDivision}`}
+            style={[styles.miniSlot, { top: topPosition }]}
+          />
+        );
+      });
+      
+      return (
+        <React.Fragment key={hour}>
+          <Text style={[styles.hourLabel, { top: HOUR_BLOCK_HEIGHT * hour - 10 }]}>
+            {hourLabel}
+          </Text>
+          <View style={[styles.hourLine, { top: HOUR_BLOCK_HEIGHT * hour }]} />
+          {miniSlots}
+        </React.Fragment>
+      );
+    });
+  }, [start, end, format24h]);
 
-export interface TimelineHoursProps {
-    start?: number;
-    end?: number;
-    date?: string;
-    format24h?: boolean;
-    onBackgroundLongPress?: (timeString: string, time: NewEventTime) => void;
-    onBackgroundLongPressOut?: (timeString: string, time: NewEventTime) => void;
-    unavailableHours?: UnavailableHours[];
-    unavailableHoursColor?: string;
-    width: number;
-    numberOfDays: number;
-    timelineLeftInset?: number;
-    testID?: string;
-}
-
-const TimelineHours = (props: TimelineHoursProps) => {
-    const {
-        format24h,
-        start = 0,
-        end = 24,
-    } = props;
-
-    const HOUR_BLOCK_HEIGHT = 60;
-
-    const renderHourLinesAndSlots = useMemo(() => {
-        return range(start, end).map(hour => (
-            <React.Fragment key={`hour-${hour}`}>
-                <Text style={[styles.timeLabel, { top: HOUR_BLOCK_HEIGHT * hour }]}>
-                    {format24h ? `${hour}:00` : `${hour % 12 || 12} ${hour < 12 ? 'AM' : 'PM'}`}
-                </Text>
-                <View style={[styles.fullHourLine, { top: HOUR_BLOCK_HEIGHT * hour }]} />
-                    {hour !== end && range(1, 4).map(minuteDivision => (
-                    <View
-                        key={`slot-${hour}-${minuteDivision}`}
-                        style={[
-                            styles.miniSlot,
-                            { top: HOUR_BLOCK_HEIGHT * hour + (HOUR_BLOCK_HEIGHT / 4) * minuteDivision }
-                        ]}
-                    />
-                ))}
-            </React.Fragment>
-        ));
-    }, [start, end, format24h]);
-
-    return (
-        <View style={{ paddingTop: 20 }}>
-            {renderHourLinesAndSlots}
-        </View>
-    );
+  return (
+    <View style={styles.container}>
+      {renderHoursAndMiniSlots}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    timeLabel: {
+    container: {
+        paddingTop: 20, // Ajuste según necesidad
+    },
+    hourLabel: {
         position: 'absolute',
         left: 0,
         color: '#333',
@@ -70,19 +53,19 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         paddingLeft: 5,
     },
-    fullHourLine: {
+    hourLine: {
         position: 'absolute',
         left: 0,
         width: '100%',
-        height: 2,
-        backgroundColor: '#e1e1e1',
+        height: 1,
+        backgroundColor: '#000', // Hora completa más visible
     },
     miniSlot: {
         position: 'absolute',
-        left: 50,
-        width: '75%',
-        height: 2,
-        backgroundColor: '#cccccc',
+        left: 50, // Ajustar según el diseño
+        width: '75%', // Los mini slots ocupan menos ancho
+        height: 1,
+        backgroundColor: '#aaa', // Mini slot menos visible
     },
 });
 
