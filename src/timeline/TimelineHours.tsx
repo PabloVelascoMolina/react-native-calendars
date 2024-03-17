@@ -49,7 +49,8 @@ const TimelineHours = (props: TimelineHoursProps) => {
     timelineLeftInset = 0,
     testID,
   } = props;
-  const TEXT_LINE_HEIGHT = 20; 
+  const HOUR_BLOCK_HEIGHT = 60; // Altura de un bloque de una hora
+  const MINI_SLOT_HEIGHT = HOUR_BLOCK_HEIGHT / 4; // Altura de los slots de 15, 30 y 45 minutos 
   const lastLongPressEventTime = useRef<NewEventTime>();
   // const offset = this.calendarHeight / (end - start);
   const offset = HOUR_BLOCK_HEIGHT;
@@ -97,42 +98,38 @@ const TimelineHours = (props: TimelineHoursProps) => {
     }
   }, [onBackgroundLongPressOut, date]);
 
-  return (
-    <>
-      <TouchableWithoutFeedback onLongPress={handleBackgroundPress} onPressOut={handlePressOut}>
-        <View style={StyleSheet.absoluteFillObject} />
-      </TouchableWithoutFeedback>
-      {hours.map(({ timeText, time }, index) => {
-        return (
-          <React.Fragment key={time}>
-            <Text
-              style={[
-                styles.timeLabel,
-                { top: HOUR_BLOCK_HEIGHT * index - TEXT_LINE_HEIGHT / 2 }
-              ]}>
-              {timeText}
-            </Text>
-            {range(1, 4).map(slot => (
-              // Renderiza los slots de 15, 30, 45 minutos
+  const renderHourLinesAndSlots = useMemo(() => {
+    return range(start, end).map(hour => {
+      return (
+        <React.Fragment key={`hour-${hour}`}>
+          <Text style={[styles.timeLabel, { top: HOUR_BLOCK_HEIGHT * hour }]}>
+            {format24h ? `${hour}:00` : `${hour % 12 || 12} ${hour < 12 ? 'AM' : 'PM'}`}
+          </Text>
+          <View style={[styles.fullHourLine, { top: HOUR_BLOCK_HEIGHT * hour }]} />
+          {hour !== end - 1 && range(1, 4).map(minuteDivision => {
+            return (
               <View
-                key={`timeSlot${time}-${slot}`}
+                key={`slot-${hour}-${minuteDivision}`}
                 style={[
-                  styles.timeSlot,
-                  { top: HOUR_BLOCK_HEIGHT * index + (HOUR_BLOCK_HEIGHT / 4) * slot - 1 }
+                  styles.miniSlot,
+                  { top: HOUR_BLOCK_HEIGHT * hour + (HOUR_BLOCK_HEIGHT / 4) * minuteDivision }
                 ]}
               />
-            ))}
-            <View
-              style={[
-                styles.line,
-                { top: HOUR_BLOCK_HEIGHT * index }
-              ]}
-            />
-          </React.Fragment>
-        );
-      })}
-      {times(numberOfDays, (index) => <View key={index} style={[styles.verticalLine, {right: (index + 1) * width / numberOfDays}]} />)}
-    </>
+            );
+          })}
+        </React.Fragment>
+      );
+    });
+  }, [start, end, format24h]);
+
+  return (
+    <View>
+      <TouchableWithoutFeedback>
+        <View style={StyleSheet.absoluteFillObject}>
+        {renderHourLinesAndSlots}
+        </View>
+      </TouchableWithoutFeedback>
+    </View>
   );
 };
 
@@ -145,22 +142,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     paddingLeft: 5,
   },
-  line: {
+  fullHourLine: {
     position: 'absolute',
     left: 0,
+    width: '100%',
     height: 1,
     backgroundColor: '#e1e1e1',
-    width: '100%',
   },
-  timeSlot: {
+  miniSlot: {
     position: 'absolute',
-    left: 0,
-    width: '100%',
+    left: 50, // Ajustar según el diseño de tu aplicación
+    width: '75%', // Esto hace que el mini slot no se extienda completamente
     height: 1,
-    backgroundColor: '#f0f0f0',
-    zIndex: 1,
+    backgroundColor: '#cccccc',
   },
-  // Estilos adicionales que puedas necesitar
 });
 
 export default React.memo(TimelineHours);
