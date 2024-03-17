@@ -49,7 +49,7 @@ const TimelineHours = (props: TimelineHoursProps) => {
     timelineLeftInset = 0,
     testID,
   } = props;
-
+  const TEXT_LINE_HEIGHT = 20; 
   const lastLongPressEventTime = useRef<NewEventTime>();
   // const offset = this.calendarHeight / (end - start);
   const offset = HOUR_BLOCK_HEIGHT;
@@ -102,38 +102,32 @@ const TimelineHours = (props: TimelineHoursProps) => {
       <TouchableWithoutFeedback onLongPress={handleBackgroundPress} onPressOut={handlePressOut}>
         <View style={StyleSheet.absoluteFillObject} />
       </TouchableWithoutFeedback>
-      {unavailableHoursBlocks.map((block, index) => (
-        <View
-          key={index}
-          style={[
-            styles.unavailableHoursBlock,
-            block,
-            unavailableHoursColor ? {backgroundColor: unavailableHoursColor} : undefined,
-            {left: timelineLeftInset}
-          ]}
-        ></View>
-      ))}
-
-      {hours.map(({timeText, time}, index) => {
+      {hours.map(({ timeText, time }, index) => {
         return (
           <React.Fragment key={time}>
-            <Text key={`timeLabel${time}`} style={[styles.timeLabel, {top: offset * index - 6, width: timelineLeftInset - 16}]}>
+            <Text
+              style={[
+                styles.timeLabel,
+                { top: HOUR_BLOCK_HEIGHT * index - TEXT_LINE_HEIGHT / 2 }
+              ]}>
               {timeText}
             </Text>
-            {time === start ? null : (
+            {range(1, 4).map(slot => (
+              // Renderiza los slots de 15, 30, 45 minutos
               <View
-                key={`line${time}`}
-                testID={`${testID}.${time}.line`}
-                style={[styles.line, {top: offset * index, width: dimensionWidth - EVENT_DIFF, left: timelineLeftInset - 16}]}
+                key={`timeSlot${time}-${slot}`}
+                style={[
+                  styles.timeSlot,
+                  { top: HOUR_BLOCK_HEIGHT * index + (HOUR_BLOCK_HEIGHT / 4) * slot - 1 }
+                ]}
               />
-            )}
-            {
-              <View
-                key={`lineHalf${time}`}
-                testID={`${testID}.${time}.lineHalf`}
-                style={[styles.line, {top: offset * (index + 0.5), width: dimensionWidth - EVENT_DIFF, left: timelineLeftInset - 16}]}
-              />
-            }
+            ))}
+            <View
+              style={[
+                styles.line,
+                { top: HOUR_BLOCK_HEIGHT * index }
+              ]}
+            />
           </React.Fragment>
         );
       })}
@@ -141,5 +135,32 @@ const TimelineHours = (props: TimelineHoursProps) => {
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  timeLabel: {
+    position: 'absolute',
+    left: 0,
+    color: '#333',
+    fontSize: 12,
+    fontWeight: 'bold',
+    paddingLeft: 5,
+  },
+  line: {
+    position: 'absolute',
+    left: 0,
+    height: 1,
+    backgroundColor: '#e1e1e1',
+    width: '100%',
+  },
+  timeSlot: {
+    position: 'absolute',
+    left: 0,
+    width: '100%',
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    zIndex: 1,
+  },
+  // Estilos adicionales que puedas necesitar
+});
 
 export default React.memo(TimelineHours);
