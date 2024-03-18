@@ -41,7 +41,7 @@ const EventBlock = (props: EventBlockProps) => {
     eventContainer: {
       borderRadius: 5,
       borderLeftWidth: 5,
-      borderLeftColor: event.borderColor ? event.color : EVENT_DEFAULT_COLOR,
+      borderLeftColor: event.borderColor ? event.borderColor : EVENT_DEFAULT_COLOR,
       padding: 8,
       paddingLeft: 10,
       backgroundColor: event.color ? event.color : EVENT_DEFAULT_COLOR,
