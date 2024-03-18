@@ -9,6 +9,8 @@ export interface Event {
   title: string;
   summary?: string;
   color?: string;
+  borderColor?: string;
+  textColor?: string;
 }
 
 export interface PackedEvent extends Event {
@@ -39,7 +41,7 @@ const EventBlock = (props: EventBlockProps) => {
     eventContainer: {
       borderRadius: 5,
       borderLeftWidth: 5,
-      borderLeftColor: '#3173d3', // Color del borde izquierdo
+      borderLeftColor: event.borderColor ? event.color : EVENT_DEFAULT_COLOR,
       padding: 8,
       paddingLeft: 10,
       backgroundColor: event.color ? event.color : EVENT_DEFAULT_COLOR,
@@ -56,14 +58,16 @@ const EventBlock = (props: EventBlockProps) => {
       fontWeight: 'bold',
       fontSize: 14,
       marginBottom: 2,
+      color: event.textColor ? event.textColor : '#555',
     },
     eventSummary: {
       fontSize: 12,
+      color: event.textColor ? event.textColor : '#555',
     },
     eventTimes: {
       fontSize: 12,
       marginTop: 4,
-      color: '#555',
+      color: event.textColor ? event.textColor : '#555',
     }
   });
 
