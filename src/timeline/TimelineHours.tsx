@@ -1,72 +1,145 @@
 import range from 'lodash/range';
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import times from 'lodash/times';
 
-const TimelineHours = ({ start = 0, end = 24, format24h = true }) => {
-  const HOUR_BLOCK_HEIGHT = 60; // Altura de cada bloque de hora
-  
-  const renderHoursAndMiniSlots = useMemo(() => {
-    return range(start, end).map(hour => {
-      // Convertir la hora a formato 12h si format24h es falso
-      const hourLabel = format24h ? `${hour}:00` : `${hour % 12 || 12} ${hour < 12 || hour === 24 ? 'AM' : 'PM'}`;
-      
-      // Los mini slots representan 15, 30, y 45 minutos
-      const miniSlots = range(1, 4).map(minuteDivision => {
-        const topPosition = HOUR_BLOCK_HEIGHT * hour + (HOUR_BLOCK_HEIGHT / 4) * minuteDivision;
-        
-        return (
-          <View
-            key={`mini-slot-${hour}-${minuteDivision}`}
-            style={[styles.miniSlot, { top: topPosition }]}
-          />
-        );
-      });
-      
-      return (
-        <React.Fragment key={hour}>
-          <Text style={[styles.hourLabel, { top: HOUR_BLOCK_HEIGHT * hour - 10 }]}>
-            {hourLabel}
-          </Text>
-          <View style={[styles.hourLine, { top: HOUR_BLOCK_HEIGHT * hour }]} />
-          {miniSlots}
-        </React.Fragment>
-      );
+import React, {useCallback, useMemo, useRef} from 'react';
+import {View, Text, TouchableWithoutFeedback, ViewStyle, TextStyle, StyleSheet} from 'react-native';
+
+import constants from '../commons/constants';
+import {buildTimeString, calcTimeByPosition, calcDateByPosition} from './helpers/presenter';
+import {buildUnavailableHoursBlocks, HOUR_BLOCK_HEIGHT, UnavailableHours} from './Packer';
+
+interface NewEventTime {
+  hour: number;
+  minutes: number;
+  date?: string;
+}
+
+export interface TimelineHoursProps {
+  start?: number;
+  end?: number;
+  date?: string;
+  format24h?: boolean;
+  onBackgroundLongPress?: (timeString: string, time: NewEventTime) => void;
+  onBackgroundLongPressOut?: (timeString: string, time: NewEventTime) => void;
+  unavailableHours?: UnavailableHours[];
+  unavailableHoursColor?: string;
+  styles: {[key: string]: ViewStyle | TextStyle};
+  width: number;
+  numberOfDays: number;
+  timelineLeftInset?: number;
+  testID?: string;
+}
+
+const dimensionWidth = constants.screenWidth;
+const EVENT_DIFF = 20;
+
+const TimelineHours = (props: TimelineHoursProps) => {
+  const {
+    format24h,
+    start = 0,
+    end = 24,
+    date,
+    unavailableHours,
+    unavailableHoursColor,
+    styles,
+    onBackgroundLongPress,
+    onBackgroundLongPressOut,
+    width,
+    numberOfDays = 1,
+    timelineLeftInset = 0,
+    testID,
+  } = props;
+
+  const lastLongPressEventTime = useRef<NewEventTime>();
+  // const offset = this.calendarHeight / (end - start);
+  const offset = HOUR_BLOCK_HEIGHT;
+  const unavailableHoursBlocks = buildUnavailableHoursBlocks(unavailableHours, {dayStart: start, dayEnd: end});
+
+  const hours = useMemo(() => {
+    return range(start, end + 1).map(i => {
+      let timeText;
+
+      if (i === start) {
+        timeText = '';
+      } else if (i < 12) {
+        timeText = !format24h ? `${i} AM` : `${i}:00`;
+      } else if (i === 12) {
+        timeText = !format24h ? `${i} PM` : `${i}:00`;
+      } else if (i === 24) {
+        timeText = !format24h ? '12 AM' : '23:59';
+      } else {
+        timeText = !format24h ? `${i - 12} PM` : `${i}:00`;
+      }
+      return {timeText, time: i};
     });
   }, [start, end, format24h]);
 
+  const handleBackgroundPress = useCallback(
+    event => {
+      const yPosition = event.nativeEvent.locationY;
+      const xPosition = event.nativeEvent.locationX;
+      const {hour, minutes} = calcTimeByPosition(yPosition, HOUR_BLOCK_HEIGHT);
+      const dateByPosition = calcDateByPosition(xPosition, timelineLeftInset, numberOfDays, date);
+      lastLongPressEventTime.current = {hour, minutes, date: dateByPosition};
+
+      const timeString = buildTimeString(hour, minutes, dateByPosition);
+      onBackgroundLongPress?.(timeString, lastLongPressEventTime.current);
+    },
+    [onBackgroundLongPress, date]
+  );
+
+  const handlePressOut = useCallback(() => {
+    if (lastLongPressEventTime.current) {
+      const {hour, minutes, date} = lastLongPressEventTime.current;
+      const timeString = buildTimeString(hour, minutes, date);
+      onBackgroundLongPressOut?.(timeString, lastLongPressEventTime.current);
+      lastLongPressEventTime.current = undefined;
+    }
+  }, [onBackgroundLongPressOut, date]);
+
   return (
-    <View style={styles.container}>
-      {renderHoursAndMiniSlots}
-    </View>
+    <>
+      <TouchableWithoutFeedback onLongPress={handleBackgroundPress} onPressOut={handlePressOut}>
+        <View style={StyleSheet.absoluteFillObject} />
+      </TouchableWithoutFeedback>
+      {unavailableHoursBlocks.map((block, index) => (
+        <View
+          key={index}
+          style={[
+            styles.unavailableHoursBlock,
+            block,
+            unavailableHoursColor ? {backgroundColor: unavailableHoursColor} : undefined,
+            {left: timelineLeftInset}
+          ]}
+        ></View>
+      ))}
+
+      {hours.map(({timeText, time}, index) => {
+        return (
+          <React.Fragment key={time}>
+            <Text key={`timeLabel${time}`} style={[styles.timeLabel, {top: offset * index - 6, width: timelineLeftInset - 16}]}>
+              {timeText}
+            </Text>
+            {time === start ? null : (
+              <View
+                key={`line${time}`}
+                testID={`${testID}.${time}.line`}
+                style={[styles.line, {top: offset * index, width: dimensionWidth - EVENT_DIFF, left: timelineLeftInset - 16}]}
+              />
+            )}
+            {
+              <View
+                key={`lineHalf${time}`}
+                testID={`${testID}.${time}.lineHalf`}
+                style={[styles.line, {top: offset * (index + 0.5), width: dimensionWidth - EVENT_DIFF, left: timelineLeftInset - 16}]}
+              />
+            }
+          </React.Fragment>
+        );
+      })}
+      {times(numberOfDays, (index) => <View key={index} style={[styles.verticalLine, {right: (index + 1) * width / numberOfDays}]} />)}
+    </>
   );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        paddingTop: 20, // Ajuste según necesidad
-    },
-    hourLabel: {
-        position: 'absolute',
-        left: 0,
-        color: '#333',
-        fontSize: 16,
-        fontWeight: 'bold',
-        paddingLeft: 5,
-    },
-    hourLine: {
-        position: 'absolute',
-        left: 0,
-        width: '100%',
-        height: 1,
-        backgroundColor: '#000', // Hora completa más visible
-    },
-    miniSlot: {
-        position: 'absolute',
-        left: 50, // Ajustar según el diseño
-        width: '75%', // Los mini slots ocupan menos ancho
-        height: 1,
-        backgroundColor: '#aaa', // Mini slot menos visible
-    },
-});
 
 export default React.memo(TimelineHours);
