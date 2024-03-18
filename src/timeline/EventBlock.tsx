@@ -76,7 +76,7 @@ const EventBlock = (props: EventBlockProps) => {
     const eventStyle = useMemo(() => ({
         left: event.left,
         height: event.height,
-        width: '100%',
+        width: '98%',
         top: event.top,
     }), [event]);
 
